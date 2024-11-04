@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *reg_name(uint8_t reg, uint8_t w) {
-    char *reg_name_byte[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
-    char *reg_name_word[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+char *REG_BYTE[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
+char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
 
-    return w == 0 ? reg_name_byte[reg] : reg_name_word[reg];
+char *reg_name(uint8_t reg, uint8_t w) {
+    return w == 0 ? REG_BYTE[reg] : REG_WORD[reg];
 }
 
 char *disasm_mov(uint8_t *opcode, char *buf) {
