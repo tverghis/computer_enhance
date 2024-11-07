@@ -11,7 +11,7 @@ char *reg_name(uint8_t reg, uint8_t w) {
     return w == 0 ? REG_BYTE[reg] : REG_WORD[reg];
 }
 
-char *disasm_mov(uint8_t *opcode, char *buf) {
+void disasm_mov(uint8_t *opcode, char *buf) {
     uint8_t d = (opcode[0] & 0x02) >> 1;
     uint8_t w = opcode[0] & 0x01;
     uint8_t operands = opcode[1];
@@ -26,9 +26,7 @@ char *disasm_mov(uint8_t *opcode, char *buf) {
     case 1:
         sprintf(buf, "mov %s, %s", reg_name(reg, w), reg_name(reg_mem, w));
         break;
-    }
-
-    return buf;
+    };
 }
 
 int main(int argc, char **argv) {
@@ -49,7 +47,7 @@ int main(int argc, char **argv) {
 
     while (fread(buffer, 1, sizeof(buffer), f) != 0) {
         char *instr = malloc(16);
-        instr = disasm_mov(buffer, instr);
+        disasm_mov(buffer, instr);
         vec_append(&items, &instr);
     }
 
