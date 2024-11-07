@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
+#include "../include/vector.h"
 
 char *REG_BYTE[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
 char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
@@ -43,15 +44,22 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    Vector items = vec_new(sizeof(char *));
     uint8_t buffer[2];
-    char *instr = malloc(16);
 
     while (fread(buffer, 1, sizeof(buffer), f) != 0) {
+        char *instr = malloc(16);
         instr = disasm_mov(buffer, instr);
-        printf("%s\n", instr);
+        vec_append(&items, &instr);
     }
 
-    free(instr);
+    for (size_t i = 0; i < items.len; ++i) {
+        char *item = *(char **)vec_index(&items, i);
+        printf("%s\n", item);
+        free(item);
+    }
+
+    vec_free(&items);
     fclose(f);
 
     return 0;
