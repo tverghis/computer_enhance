@@ -7,9 +7,7 @@
 char *REG_BYTE[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
 char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
 
-char *reg_name(uint8_t reg, uint8_t w) {
-    return w == 0 ? REG_BYTE[reg] : REG_WORD[reg];
-}
+#define REG_NAME(reg, w) ((w) == 0 ? REG_BYTE[(reg)] : REG_WORD[(reg)])
 
 void disasm_mov(uint8_t *opcode, char *buf) {
     uint8_t d = (opcode[0] & 0x02) >> 1;
@@ -21,10 +19,10 @@ void disasm_mov(uint8_t *opcode, char *buf) {
 
     switch (d) {
     case 0:
-        sprintf(buf, "mov %s, %s", reg_name(reg_mem, w), reg_name(reg, w));
+        sprintf(buf, "mov %s, %s", REG_NAME(reg_mem, w), REG_NAME(reg, w));
         break;
     case 1:
-        sprintf(buf, "mov %s, %s", reg_name(reg, w), reg_name(reg_mem, w));
+        sprintf(buf, "mov %s, %s", REG_NAME(reg, w), REG_NAME(reg_mem, w));
         break;
     };
 }
