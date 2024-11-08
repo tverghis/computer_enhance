@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -Wpedantic -Iinclude
+CFLAGS=--std=c2x -g -Wall -Wpedantic -Iinclude
 
 SRCS=$(wildcard src/*c)
 OBJS=$(patsubst src/%.c, obj/%.o, $(SRCS))
