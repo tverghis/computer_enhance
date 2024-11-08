@@ -9,7 +9,13 @@ char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
 
 #define REG_NAME(reg, w) ((w) == 0 ? REG_BYTE[(reg)] : REG_WORD[(reg)])
 
-void disasm_mov(uint8_t *opcode, char *buf) {
+char *disasm_mov(uint8_t *opcode) {
+    char *buf = malloc(16);
+    if (buf == NULL) {
+        fprintf(stderr, "disasm_mov: malloc failed");
+        return NULL;
+    }
+
     uint8_t d = (opcode[0] & 0x02) >> 1;
     uint8_t w = opcode[0] & 0x01;
     uint8_t operands = opcode[1];
@@ -25,6 +31,8 @@ void disasm_mov(uint8_t *opcode, char *buf) {
         sprintf(buf, "mov %s, %s", REG_NAME(reg, w), REG_NAME(reg_mem, w));
         break;
     };
+
+    return buf;
 }
 
 int main(int argc, char **argv) {
@@ -44,8 +52,12 @@ int main(int argc, char **argv) {
     uint8_t buffer[2];
 
     while (fread(buffer, 1, sizeof(buffer), f) != 0) {
-        char *instr = malloc(16);
-        disasm_mov(buffer, instr);
+        char *instr = disasm_mov(buffer);
+
+        if (instr == NULL) {
+            return -1;
+        }
+
         vec_append(&items, &instr);
     }
 
