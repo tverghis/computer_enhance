@@ -9,19 +9,13 @@ char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
 
 #define REG_NAME(reg, w) ((w) == 0 ? REG_BYTE[(reg)] : REG_WORD[(reg)])
 
-char *disasm_mov(uint8_t *opcode) {
-    char *buf = malloc(16);
-    if (buf == NULL) {
-        fprintf(stderr, "disasm_mov: malloc failed");
-        return NULL;
-    }
+void disasm_mov(uint8_t *instrs, char *buf) {
+    uint8_t d = (instrs[0] & 0b00000010) >> 1;
+    uint8_t w = instrs[0] & 0b00000001;
+    uint8_t operands = instrs[1];
 
-    uint8_t d = (opcode[0] & 0x02) >> 1;
-    uint8_t w = opcode[0] & 0x01;
-    uint8_t operands = opcode[1];
-
-    uint8_t reg = (operands & 0x38) >> 3;
-    uint8_t reg_mem = (operands & 0x07);
+    uint8_t reg = (operands & 0b00111000) >> 3;
+    uint8_t reg_mem = (operands & 0b00000111);
 
     switch (d) {
     case 0:
@@ -31,6 +25,24 @@ char *disasm_mov(uint8_t *opcode) {
         sprintf(buf, "mov %s, %s", REG_NAME(reg, w), REG_NAME(reg_mem, w));
         break;
     };
+}
+
+char *disasm(uint8_t *instrs) {
+    char *buf = malloc(16);
+    if (buf == NULL) {
+        fprintf(stderr, "disasm: malloc failed\n");
+        return NULL;
+    }
+
+    uint8_t opcode = (instrs[0] & 0b11111100) >> 2;
+
+    switch (opcode) {
+    case 0b100010:
+        disasm_mov(instrs, buf);
+        break;
+    default:
+        fprintf(stderr, "disasm: unrecognized opcode %b\n", opcode);
+    }
 
     return buf;
 }
@@ -44,7 +56,7 @@ int main(int argc, char **argv) {
     FILE *f = fopen(argv[1], "rb");
 
     if (f == NULL) {
-        printf("Failed to open file %s.\n", argv[1]);
+        fprintf(stderr, "Failed to open file %s.\n", argv[1]);
         return -1;
     }
 
@@ -52,7 +64,7 @@ int main(int argc, char **argv) {
     uint8_t buffer[2];
 
     while (fread(buffer, 1, sizeof(buffer), f) != 0) {
-        char *instr = disasm_mov(buffer);
+        char *instr = disasm(buffer);
 
         if (instr == NULL) {
             return -1;
