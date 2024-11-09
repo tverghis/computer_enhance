@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#define REG_NAME(reg, w) ((w) == 0 ? (REG_BYTE)[(reg)] : (REG_WORD)[(reg)])
-
 #define MASK_OPCODE 0b11111100
 #define MASK_D 0b00000010
 #define MASK_W 0b00000001

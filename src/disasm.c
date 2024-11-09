@@ -4,8 +4,10 @@
 
 #include "../include/disasm.h"
 
-const char *REG_BYTE[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
-const char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+char *REG_BYTE[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
+char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+
+#define REG_NAME(reg, w) ((w) == 0 ? (REG_BYTE)[(reg)] : (REG_WORD)[(reg)])
 
 InstrMov new_instrmov(uint8_t *instrs) {
     uint8_t d = (instrs[0] & MASK_D) >> 1;
@@ -26,19 +28,35 @@ InstrMov new_instrmov(uint8_t *instrs) {
     return self;
 }
 
+static void disasm_mov_reg_mode(InstrMov *mov, char **dst, char **src) {
+    switch (mov->d) {
+    case 0:
+        *dst = REG_NAME(mov->rm, mov->w);
+        *src = REG_NAME(mov->reg, mov->w);
+        break;
+    default:
+        *dst = REG_NAME(mov->reg, mov->w);
+        *src = REG_NAME(mov->rm, mov->w);
+        break;
+    };
+}
+
 static void disasm_mov(uint8_t *instrs, char *buf) {
     InstrMov mov = new_instrmov(instrs);
 
-    switch (mov.d) {
-    case 0:
-        sprintf(buf, "mov %s, %s", REG_NAME(mov.rm, mov.w),
-                REG_NAME(mov.reg, mov.w));
+    char *dst_name = NULL;
+    char *src_name = NULL;
+
+    switch (mov.mod) {
+    case 0b11:
+        disasm_mov_reg_mode(&mov, &dst_name, &src_name);
         break;
-    case 1:
-        sprintf(buf, "mov %s, %s", REG_NAME(mov.reg, mov.w),
-                REG_NAME(mov.rm, mov.w));
-        break;
-    };
+    default:
+        fprintf(stderr, "disasm_mov: unrecognized mod: %b\n", mov.mod);
+        return;
+    }
+
+    sprintf(buf, "mov %s, %s", dst_name, src_name);
 }
 
 char *disasm(uint8_t *instrs) {
