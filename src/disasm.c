@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/disasm.h"
 
@@ -41,6 +42,35 @@ static void disasm_mov_reg_mode(InstrMov *mov, char **dst, char **src) {
     };
 }
 
+char *EAC_BASE[] = {"bx + si", "bx + di", "bp + si", "bp + di",
+                    "si",      "di",      "bp",      "bx"};
+char LPAREN = '[';
+char RPAREN = ']';
+static void disasm_mov_mem_mode(InstrMov *mov, char **dst, char **src) {
+    char *reg_name = REG_NAME(mov->reg, mov->w);
+    char *mem_name = malloc(16);
+
+    if (mem_name == NULL) {
+        fprintf(stderr, "disasm_mov_mem_mode: malloc failed");
+        return;
+    }
+
+    strncat(mem_name, &LPAREN, 1);
+    strncat(mem_name, EAC_BASE[mov->rm], 7);
+    strncat(mem_name, &RPAREN, 1);
+
+    switch (mov->d) {
+    case 0:
+        *dst = mem_name;
+        *src = reg_name;
+        break;
+    default:
+        *dst = reg_name;
+        *src = mem_name;
+        break;
+    };
+}
+
 static void disasm_mov(uint8_t *instrs, char *buf) {
     InstrMov mov = new_instrmov(instrs);
 
@@ -50,6 +80,9 @@ static void disasm_mov(uint8_t *instrs, char *buf) {
     switch (mov.mod) {
     case 0b11:
         disasm_mov_reg_mode(&mov, &dst_name, &src_name);
+        break;
+    case 0b00:
+        disasm_mov_mem_mode(&mov, &dst_name, &src_name);
         break;
     default:
         fprintf(stderr, "disasm_mov: unrecognized mod: %b\n", mov.mod);
