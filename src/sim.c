@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,8 +21,9 @@ int main(int argc, char **argv) {
 
     Vector items = vec_new(sizeof(char *));
     uint8_t buffer[2];
+    size_t nread = 0;
 
-    while (fread(buffer, 1, sizeof(buffer), f) != 0) {
+    while ((nread = fread(buffer, 1, sizeof(buffer), f)) > 0) {
         char *instr = disasm(buffer);
 
         if (instr == NULL) {
