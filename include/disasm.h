@@ -1,6 +1,8 @@
 #ifndef _DISASM_H
 #define _DISASM_H
 
+#include "instrstream.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 #define MASK_OPCODE 0b11111100
@@ -17,11 +19,9 @@ typedef struct {
     uint8_t reg;
     uint8_t rm;
 
-    uint8_t *instrs;
+    InstrStream stream;
 } InstrMov;
 
-InstrMov new_instrmov(uint8_t *);
-
-char *disasm(uint8_t *);
+char *disasm(uint8_t, InstrStream *);
 
 #endif

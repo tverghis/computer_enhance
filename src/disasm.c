@@ -1,32 +1,38 @@
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../include/disasm.h"
+#include "../include/instrstream.h"
 
 char *REG_BYTE[8] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
 char *REG_WORD[8] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
 
 #define REG_NAME(reg, w) ((w) == 0 ? (REG_BYTE)[(reg)] : (REG_WORD)[(reg)])
 
-InstrMov new_instrmov(uint8_t *instrs) {
-    uint8_t d = (instrs[0] & MASK_D) >> 1;
-    uint8_t w = instrs[0] & MASK_W;
-    uint8_t operands = instrs[1];
+bool new_instrmov(uint8_t byte, InstrStream *instrstream, InstrMov *out) {
+    uint8_t d = (byte & MASK_D) >> 1;
+    uint8_t w = byte & MASK_W;
+    uint8_t operands;
+
+    if (next_byte(instrstream, &operands) <= 0) {
+        return false;
+    }
 
     uint8_t mod = (operands & MASK_MOD) >> 6;
     uint8_t reg = (operands & MASK_REG) >> 3;
     uint8_t reg_mem = (operands & MASK_RM);
 
-    InstrMov self = {.d = d,
-                     .w = w,
-                     .mod = mod,
-                     .reg = reg,
-                     .rm = reg_mem,
-                     .instrs = instrs};
+    *out = (InstrMov){.d = d,
+                      .w = w,
+                      .mod = mod,
+                      .reg = reg,
+                      .rm = reg_mem,
+                      .stream = instrstream};
 
-    return self;
+    return true;
 }
 
 static void disasm_mov_reg_mode(InstrMov *mov, char **dst, char **src) {
@@ -71,39 +77,45 @@ static void disasm_mov_mem_mode(InstrMov *mov, char **dst, char **src) {
     };
 }
 
-static void disasm_mov(uint8_t *instrs, char *buf) {
-    InstrMov mov = new_instrmov(instrs);
+static void disasm_mov(uint8_t byte, InstrStream *instrs, char *buf) {
+    InstrMov *mov = malloc(sizeof(InstrMov));
+    if (!new_instrmov(byte, instrs, mov)) {
+        fprintf(stderr, "disasm_mov: could not create new InstrMov\n");
+        return;
+    }
 
     char *dst_name = NULL;
     char *src_name = NULL;
 
-    switch (mov.mod) {
+    switch (mov->mod) {
     case 0b11:
-        disasm_mov_reg_mode(&mov, &dst_name, &src_name);
+        disasm_mov_reg_mode(mov, &dst_name, &src_name);
         break;
     case 0b00:
-        disasm_mov_mem_mode(&mov, &dst_name, &src_name);
+        disasm_mov_mem_mode(mov, &dst_name, &src_name);
         break;
     default:
-        fprintf(stderr, "disasm_mov: unrecognized mod: %b\n", mov.mod);
+        fprintf(stderr, "disasm_mov: unrecognized mod: %b\n", mov->mod);
         return;
     }
 
     sprintf(buf, "mov %s, %s", dst_name, src_name);
+
+    free(mov);
 }
 
-char *disasm(uint8_t *instrs) {
+char *disasm(uint8_t byte, InstrStream *instrs) {
     char *buf = malloc(16);
     if (buf == NULL) {
         fprintf(stderr, "disasm: malloc failed\n");
         return NULL;
     }
 
-    uint8_t opcode = (instrs[0] & MASK_OPCODE) >> 2;
+    uint8_t opcode = (byte & MASK_OPCODE) >> 2;
 
     switch (opcode) {
     case 0b100010:
-        disasm_mov(instrs, buf);
+        disasm_mov(byte, instrs, buf);
         break;
     default:
         fprintf(stderr, "disasm: unrecognized opcode %b\n", opcode);

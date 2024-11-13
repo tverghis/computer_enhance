@@ -8,6 +8,8 @@ typedef struct {
     void *inner;
 } InstrStream;
 
+InstrStream new_instrstream(void *);
+
 size_t next_byte(InstrStream *, uint8_t *);
 
 #endif

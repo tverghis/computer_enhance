@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "../include/disasm.h"
+#include "../include/instrstream.h"
 #include "../include/vector.h"
 
 int main(int argc, char **argv) {
@@ -19,12 +20,13 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    Vector items = vec_new(sizeof(char *));
-    uint8_t buffer[2];
-    size_t nread = 0;
+    InstrStream instrs = new_instrstream(f);
 
-    while ((nread = fread(buffer, 1, sizeof(buffer), f)) > 0) {
-        char *instr = disasm(buffer);
+    Vector items = vec_new(sizeof(char *));
+    uint8_t byte;
+
+    while (next_byte(&instrs, &byte)) {
+        char *instr = disasm(byte, &instrs);
 
         if (instr == NULL) {
             return -1;
